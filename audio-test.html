@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .log {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Audio Playback Test</h1>
+    <p>This page tests if the background music can be played correctly.</p>
+    
+    <div>
+        <button id="play-direct">Play Audio Directly</button>
+        <button id="play-api">Play Using Web Audio API</button>
+        <button id="pause">Pause Audio</button>
+    </div>
+    
+    <div>
+        <p>Audio Status: <span id="status">Not started</span></p>
+        <p>Current Time: <span id="current-time">0</span></p>
+    </div>
+    
+    <div class="log" id="log"></div>
+    
+    <!-- Audio element -->
+    <audio id="test-audio" preload="auto" src="Echoes In Time.mp3"></audio>
+    
+    <script>
+        // Elements
+        const audio = document.getElementById('test-audio');
+        const playDirectBtn = document.getElementById('play-direct');
+        const playApiBtn = document.getElementById('play-api');
+        const pauseBtn = document.getElementById('pause');
+        const statusEl = document.getElementById('status');
+        const timeEl = document.getElementById('current-time');
+        const logEl = document.getElementById('log');
+        
+        // Web Audio API context
+        let audioContext = null;
+        let source = null;
+        
+        // Logging function
+        function log(message) {
+            const entry = document.createElement('div');
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+        
+        // Update status
+        function updateStatus() {
+            if (audio.paused) {
+                statusEl.textContent = 'Paused';
+            } else {
+                statusEl.textContent = 'Playing';
+            }
+            timeEl.textContent = audio.currentTime.toFixed(2);
+        }
+        
+        // Initialize
+        function init() {
+            log('Audio test page initialized');
+            
+            // Log audio element details
+            log(`Audio element: ${audio ? 'Found' : 'Not found'}`);
+            log(`Audio source: ${audio.src}`);
+            log(`Audio preload: ${audio.preload}`);
+            
+            // Add event listeners to audio element
+            audio.addEventListener('play', () => log('Audio play event fired'));
+            audio.addEventListener('playing', () => log('Audio playing event fired'));
+            audio.addEventListener('pause', () => log('Audio pause event fired'));
+            audio.addEventListener('ended', () => log('Audio ended event fired'));
+            audio.addEventListener('error', (e) => {
+                log(`Audio error event: ${e.type}`);
+                if (audio.error) {
+                    log(`Error code: ${audio.error.code}, message: ${audio.error.message}`);
+                }
+            });
+            audio.addEventListener('canplay', () => log('Audio canplay event fired'));
+            audio.addEventListener('canplaythrough', () => log('Audio canplaythrough event fired'));
+            
+            // Update status periodically
+            setInterval(updateStatus, 1000);
+            
+            // Button event listeners
+            playDirectBtn.addEventListener('click', playDirect);
+            playApiBtn.addEventListener('click', playWithApi);
+            pauseBtn.addEventListener('click', pauseAudio);
+        }
+        
+        // Play audio directly
+        function playDirect() {
+            log('Attempting to play audio directly');
+            
+            try {
+                audio.volume = 0.5;
+                const playPromise = audio.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        log('Audio started playing successfully');
+                    }).catch(e => {
+                        log(`Error playing audio: ${e.message}`);
+                    });
+                } else {
+                    log('Play promise was undefined (older browser?)');
+                }
+            } catch (e) {
+                log(`Exception trying to play audio: ${e.message}`);
+            }
+        }
+        
+        // Play using Web Audio API
+        function playWithApi() {
+            log('Attempting to play audio with Web Audio API');
+            
+            try {
+                // Create audio context if needed
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    log('Created new AudioContext');
+                }
+                
+                // Resume audio context if suspended
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume().then(() => {
+                        log('AudioContext resumed successfully');
+                        connectAndPlay();
+                    }).catch(e => {
+                        log(`Error resuming AudioContext: ${e.message}`);
+                    });
+                } else {
+                    connectAndPlay();
+                }
+            } catch (e) {
+                log(`Exception setting up Web Audio API: ${e.message}`);
+            }
+        }
+        
+        // Connect audio to Web Audio API and play
+        function connectAndPlay() {
+            try {
+                // Disconnect previous source if exists
+                if (source) {
+                    source.disconnect();
+                    log('Disconnected previous audio source');
+                }
+                
+                // Create new source
+                source = audioContext.createMediaElementSource(audio);
+                source.connect(audioContext.destination);
+                log('Connected audio element to AudioContext');
+                
+                // Play audio
+                audio.play().then(() => {
+                    log('Audio started playing with Web Audio API');
+                }).catch(e => {
+                    log(`Error playing audio with Web Audio API: ${e.message}`);
+                });
+            } catch (e) {
+                log(`Exception connecting audio: ${e.message}`);
+            }
+        }
+        
+        // Pause audio
+        function pauseAudio() {
+            log('Pausing audio');
+            audio.pause();
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

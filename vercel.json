@@ -6,6 +6,17 @@
     { "src": "*.mp3", "use": "@vercel/static" }
   ],
   "routes": [
+    {
+      "src": "/(.*\\.mp3)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Type": "audio/mpeg",
+        "Access-Control-Allow-Origin": "*",
+        "Cross-Origin-Resource-Policy": "cross-origin"
+      },
+      "dest": "/$1",
+      "continue": true
+    },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }

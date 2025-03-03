@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+    <!--test-->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -171,8 +172,8 @@
         </div>
         
         <!-- Background music -->
-        <audio id="background-music" loop>
-            <source src="Echoes In Time.mp3" type="audio/mpeg">
+        <audio id="background-music" preload="auto" loop src="Echoes In Time.mp3">
+            Your browser does not support the audio element.
         </audio>
     </div>
 
@@ -236,27 +237,64 @@
             }
             
             setupBackgroundMusic() {
-                if (!this.audioContext) return;
-                
-                // Get the audio element
-                this.backgroundMusic = document.getElementById('background-music');
-                
-                // Create media element source
-                this.musicSource = this.audioContext.createMediaElementSource(this.backgroundMusic);
-                
-                // Create filter node for the cutoff effect
-                this.filter = this.audioContext.createBiquadFilter();
-                this.filter.type = 'lowpass';
-                
-                // Set initial filter frequency (30% cutoff)
-                this.setFilterCutoff(0.3);
-                
-                // Connect nodes
-                this.musicSource.connect(this.filter);
-                this.filter.connect(this.audioContext.destination);
-                
-                // Set volume
-                this.backgroundMusic.volume = 0.5;
+                try {
+                    console.log('Setting up background music');
+                    
+                    // Get the audio element directly
+                    this.backgroundMusic = document.getElementById('background-music');
+                    
+                    if (!this.backgroundMusic) {
+                        console.error('Could not find background music element');
+                        return;
+                    }
+                    
+                    console.log('Found background music element:', this.backgroundMusic);
+                    
+                    // Add event listeners for debugging
+                    this.backgroundMusic.addEventListener('error', (e) => {
+                        console.error('Audio error event:', e);
+                        if (this.backgroundMusic.error) {
+                            console.error('Audio error details:', {
+                                code: this.backgroundMusic.error.code,
+                                message: this.backgroundMusic.error.message
+                            });
+                        }
+                    });
+                    
+                    this.backgroundMusic.addEventListener('canplaythrough', () => {
+                        console.log('Audio can play through event fired');
+                    });
+                    
+                    this.backgroundMusic.addEventListener('play', () => {
+                        console.log('Audio play event fired');
+                    });
+                    
+                    this.backgroundMusic.addEventListener('playing', () => {
+                        console.log('Audio playing event fired');
+                    });
+                    
+                    // Set volume directly
+                    this.backgroundMusic.volume = 0.5;
+                    
+                    // Try to load the audio
+                    console.log('Loading audio file');
+                    this.backgroundMusic.load();
+                    
+                    // Skip Web Audio API for now to simplify
+                    console.log('Skipping Web Audio API setup for simplicity');
+                    this.audioContext = null;
+                    
+                    // Try playing directly after a short delay
+                    setTimeout(() => {
+                        console.log('Attempting to play audio after delay');
+                        this.backgroundMusic.play()
+                            .then(() => console.log('Background music started playing in setupBackgroundMusic'))
+                            .catch(e => console.error('Error playing background music in setupBackgroundMusic:', e));
+                    }, 1000);
+                    
+                } catch (e) {
+                    console.error('Error setting up background music:', e);
+                }
             }
             
             setFilterCutoff(percentage) {
@@ -274,17 +312,52 @@
             }
             
             playBackgroundMusic() {
-                if (this.isMuted || !this.backgroundMusic) return;
+                console.log('playBackgroundMusic called');
                 
-                // Start audio context on user interaction (required by browsers)
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
+                if (this.isMuted) {
+                    console.log('Audio is muted, not playing');
+                    return;
                 }
                 
-                // Play music
-                this.backgroundMusic.play().catch(e => {
-                    console.log('Error playing background music:', e);
-                });
+                if (!this.backgroundMusic) {
+                    console.error('No background music element found');
+                    return;
+                }
+                
+                console.log('Attempting to play background music directly');
+                
+                // Simple direct approach
+                try {
+                    // Make sure volume is set
+                    this.backgroundMusic.volume = 0.5;
+                    
+                    // Force load
+                    this.backgroundMusic.load();
+                    
+                    // Play with promise handling
+                    const playPromise = this.backgroundMusic.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log('Background music started playing successfully');
+                        }).catch(e => {
+                            console.error('Error playing background music:', e);
+                            
+                            // Add a click handler to the document as a fallback
+                            console.log('Adding document click handler as fallback');
+                            document.addEventListener('click', () => {
+                                console.log('Document clicked, trying to play audio again');
+                                this.backgroundMusic.play()
+                                    .then(() => console.log('Background music started playing after document click'))
+                                    .catch(err => console.error('Still failed to play after document click:', err));
+                            }, { once: true });
+                        });
+                    } else {
+                        console.log('Play promise was undefined, older browser?');
+                    }
+                } catch (e) {
+                    console.error('Exception trying to play background music:', e);
+                }
             }
 
             init() {
@@ -630,6 +703,8 @@
             }
 
             startGame() {
+                console.log('startGame called');
+                
                 // Make sure canvas is properly sized before starting
                 this.resizeCanvas();
                 
@@ -637,13 +712,51 @@
                 this.startScreen.classList.add('hidden');
                 this.resetGame(false);
                 
-                // Start audio context on user interaction (required by browsers)
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
+                // This is a user interaction, perfect time to play audio
+                console.log('User interaction in startGame, perfect time to play audio');
+                
+                // Ensure audio is not muted
+                this.isMuted = false;
+                if (this.soundBtn) {
+                    this.soundBtn.textContent = '🔊';
                 }
                 
-                // Set filter cutoff to 100% when game starts
-                this.setFilterCutoff(1.0);
+                // Try playing the audio directly
+                if (this.backgroundMusic) {
+                    console.log('Attempting to play audio in startGame');
+                    
+                    // Try playing directly
+                    this.backgroundMusic.volume = 0.5;
+                    this.backgroundMusic.play()
+                        .then(() => console.log('Audio started playing in startGame'))
+                        .catch(e => {
+                            console.error('Error playing audio in startGame:', e);
+                            
+                            // As a fallback, try playing the audio element directly
+                            const audioEl = document.getElementById('background-music');
+                            if (audioEl && audioEl !== this.backgroundMusic) {
+                                console.log('Trying to play audio element directly as fallback');
+                                audioEl.volume = 0.5;
+                                audioEl.play()
+                                    .then(() => console.log('Direct audio element play succeeded'))
+                                    .catch(err => console.error('Direct audio element play failed:', err));
+                            }
+                        });
+                } else {
+                    console.error('No background music element in game object');
+                    
+                    // Try getting and playing the audio element directly
+                    const audioEl = document.getElementById('background-music');
+                    if (audioEl) {
+                        console.log('Found audio element directly, trying to play');
+                        audioEl.volume = 0.5;
+                        audioEl.play()
+                            .then(() => console.log('Direct audio element play succeeded'))
+                            .catch(err => console.error('Direct audio element play failed:', err));
+                    } else {
+                        console.error('Could not find background music element in the DOM');
+                    }
+                }
             }
 
             resumeGame() {
@@ -667,20 +780,51 @@
             }
 
             toggleSound() {
+                console.log('toggleSound called, current mute state:', this.isMuted);
+                
                 this.isMuted = !this.isMuted;
                 this.soundBtn.textContent = this.isMuted ? '🔇' : '🔊';
                 
+                console.log('New mute state:', this.isMuted);
+                
                 // Toggle background music
                 if (this.isMuted) {
+                    console.log('Muting audio');
                     if (this.backgroundMusic) {
+                        console.log('Pausing background music');
                         this.backgroundMusic.pause();
                     }
+                    
+                    // Also try to pause the audio element directly as a fallback
+                    const audioEl = document.getElementById('background-music');
+                    if (audioEl && audioEl !== this.backgroundMusic) {
+                        console.log('Pausing audio element directly');
+                        audioEl.pause();
+                    }
                 } else {
+                    console.log('Unmuting audio - this is a user interaction, perfect time to play');
+                    
+                    // Try playing the audio directly
+                    if (this.backgroundMusic) {
+                        console.log('Playing background music');
+                        this.backgroundMusic.volume = 0.5;
+                        this.backgroundMusic.play()
+                            .then(() => console.log('Background music started playing in toggleSound'))
+                            .catch(e => console.error('Error playing background music in toggleSound:', e));
+                    }
+                    
+                    // Also try to play the audio element directly as a fallback
+                    const audioEl = document.getElementById('background-music');
+                    if (audioEl && audioEl !== this.backgroundMusic) {
+                        console.log('Playing audio element directly');
+                        audioEl.volume = 0.5;
+                        audioEl.play()
+                            .then(() => console.log('Direct audio element play succeeded in toggleSound'))
+                            .catch(err => console.error('Direct audio element play failed in toggleSound:', err));
+                    }
+                    
                     // Play a test sound when unmuting
                     this.playSound('pop');
-                    
-                    // Resume background music
-                    this.playBackgroundMusic();
                 }
             }
 
@@ -737,7 +881,68 @@
 
         // Start the game when the page loads
         window.addEventListener('load', () => {
-            const game = new Game();
+            // Create a simple audio initialization button
+            const audioInitButton = document.createElement('button');
+            audioInitButton.textContent = 'Click to Enable Audio & Start Game';
+            audioInitButton.style.position = 'fixed';
+            audioInitButton.style.top = '50%';
+            audioInitButton.style.left = '50%';
+            audioInitButton.style.transform = 'translate(-50%, -50%)';
+            audioInitButton.style.zIndex = '1000';
+            audioInitButton.style.padding = '15px 30px';
+            audioInitButton.style.backgroundColor = '#ff4081';
+            audioInitButton.style.color = 'white';
+            audioInitButton.style.border = 'none';
+            audioInitButton.style.borderRadius = '50px';
+            audioInitButton.style.fontSize = '1.2rem';
+            audioInitButton.style.cursor = 'pointer';
+            audioInitButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+            
+            // Get the audio element directly
+            const bgMusic = document.getElementById('background-music');
+            
+            // Show the button
+            document.body.appendChild(audioInitButton);
+            
+            // Don't initialize the game yet
+            let game = null;
+            
+            // When the button is clicked
+            audioInitButton.addEventListener('click', () => {
+                console.log('Audio init button clicked');
+                
+                // Remove the button
+                audioInitButton.remove();
+                
+                // Try to play the audio directly first
+                try {
+                    console.log('Attempting to play audio directly');
+                    bgMusic.volume = 0.5;
+                    bgMusic.play()
+                        .then(() => console.log('Audio started playing directly'))
+                        .catch(e => console.error('Direct audio play failed:', e));
+                } catch (e) {
+                    console.error('Error playing audio directly:', e);
+                }
+                
+                // Initialize the game
+                console.log('Initializing game');
+                game = new Game();
+                
+                // Make sure audio is not muted in the game
+                game.isMuted = false;
+                
+                // Try playing through the game's methods as well
+                setTimeout(() => {
+                    console.log('Attempting to play through game methods');
+                    if (game && game.backgroundMusic) {
+                        game.backgroundMusic.volume = 0.5;
+                        game.backgroundMusic.play()
+                            .then(() => console.log('Game audio started playing'))
+                            .catch(e => console.error('Game audio play failed:', e));
+                    }
+                }, 1000);
+            });
         });
     </script>
 </body>

@@ -2,6 +2,19 @@
 
 A fun HTML5 reflex game where players tap or click on objects before they disappear, while avoiding red objects.
 
+## Audio Support
+
+Due to browser autoplay policies, users need to interact with the game before audio can play. When you first load the game, you'll see a "Click to Start Game with Audio" button. Clicking this button enables the background music and sound effects.
+
+### Audio Troubleshooting
+
+If you experience issues with audio playback after deployment:
+
+1. Check the browser console for any error messages related to audio
+2. Try using the included `audio-test.html` page to test audio playback directly
+3. Ensure your browser allows autoplay of media with sound
+4. Try different browsers to see if the issue is browser-specific
+
 ## Deployment to Vercel
 
 This project is configured for easy deployment to Vercel. Follow these steps to deploy:
