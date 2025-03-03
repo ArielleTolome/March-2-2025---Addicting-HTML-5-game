@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "name": "quick-catch-game",
+  "builds": [
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "*.mp3", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
+}
